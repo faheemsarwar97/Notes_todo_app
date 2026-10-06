@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="mb-5">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0;">📝 Your Notes</h2>
+        <a href="/notes/add/" class="btn btn-success">➕ Add Note</a>
+    </div>
+</div>
+
+{% if notes %}
+<div class="row g-4">
+    {% for note in notes %}
+    <div class="col-lg-6">
+        <div class="card note-card" style="height: 100%; transition: all 0.3s ease;">
+            <div class="card-body">
+                <!-- Note Title -->
+                <h5 class="card-title mb-3" style="color: #1e293b; font-weight: 600; line-height: 1.5;">
+                    <a href="{% url 'notes_detail' note.id %}" style="text-decoration: none; color: inherit;">
+                        {{ note.title }}
+                    </a>
+                </h5>
+
+                <!-- Note Preview -->
+                <p class="card-text mb-4" style="color: #475569; line-height: 1.6; min-height: 60px;">
+                    {{ note.content|striptags|truncatechars:120 }}
+                </p>
+
+                <!-- Created Date -->
+                <div class="mb-3"
+                    style="padding: 12px; background-color: #f0f9ff; border-radius: 8px; border-left: 3px solid #0ea5e9;">
+                    <small style="color: #0369a1; font-weight: 600;">📅 Date: {{note.created_at|date:"M d,Y"}}</small>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex gap-2">
+                    <a href="/notes/edit/{{ note.id }}/" class="btn btn-sm"
+                        style="background-color: #3b82f6; color: white; flex: 1; border: none; border-radius: 8px; font-weight: 600; transition: all 0.3s ease;">
+                        ✏️ Edit
+                    </a>
+                    <a href="/notes/delete/{{ note.id }}/" class="btn btn-sm"
+                        style="background-color: #ef4444; color: white; flex: 1; border: none; border-radius: 8px; font-weight: 600; transition: all 0.3s ease;"
+                        onclick="return confirm('Are you sure?')">
+                        🗑️ Delete
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div
+    style="text-align: center; padding: 60px 20px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 16px;">
+    <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+    <h3 style="color: #1e293b; margin-bottom: 8px;">No Notes Yet</h3>
+    <p style="color: #64748b; margin-bottom: 20px;">Start by creating your first note</p>
+    <a href="/notes/add/" class="btn btn-success">➕ Create Your First Note</a>
+</div>
+{% endif %}
+
+<style>
+    .note-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    .note-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+</style>
+
+{% endblock %}

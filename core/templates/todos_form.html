@@ -1,0 +1,187 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <h2 class="mb-4 text-center">{{ form.instance.id|yesno:"✏️ Edit Task,✨ New Task" }}</h2>
+
+        <div class="card p-4 p-md-5"
+            style="border: none; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.05);">
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Task Description -->
+                <div class="form-group mb-4">
+                    <label for="{{ form.task.id_for_label }}" class="text-uppercase text-secondary fw-bold"
+                        style="font-size: 13px; letter-spacing: 0.5px;">📌 What needs to be done?</label>
+                    {{ form.task }}
+                    {% if form.task.errors %}
+                    <div class="text-danger small mt-1">{{ form.task.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <!-- Activity Type -->
+                    <div class="col-md-7">
+                        <label for="{{ form.activity.id_for_label }}" class="text-uppercase text-secondary fw-bold"
+                            style="font-size: 13px; letter-spacing: 0.5px;">🎯 Context / Category</label>
+                        <div class="d-flex gap-3 align-items-center mt-1">
+                            <div class="activity-selector flex-grow-1">
+                                {{ form.activity }}
+                            </div>
+                            <div id="emoji-display" class="d-flex align-items-center justify-content-center"
+                                style="width: 50px; height: 50px; background: #fef9c3; border-radius: 12px; font-size: 28px; border: 2px solid #fde047; box-shadow: 0 4px 10px rgba(253, 224, 71, 0.2);">
+                                ✨
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Due Date -->
+                    <div class="col-md-5">
+                        <label for="{{ form.due_date.id_for_label }}" class="text-uppercase text-secondary fw-bold"
+                            style="font-size: 13px; letter-spacing: 0.5px;">📅 Due Date</label>
+                        <div class="mt-1">
+                            {{ form.due_date }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Activity (Hidden by default) -->
+                <div class="form-group mb-4" id="custom-activity-row" style="display: none;">
+                    <label for="{{ form.activity_custom.id_for_label }}" class="text-uppercase text-secondary fw-bold"
+                        style="font-size: 13px; letter-spacing: 0.5px;">✨ Custom Category Name</label>
+                    {{ form.activity_custom }}
+                </div>
+
+                <div class="p-3 mb-4" style="background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-check-label fw-semibold text-dark">Options</label>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2">
+                        <!-- Important Toggle -->
+                        <div class="form-check form-switch">
+                            {{ form.is_important }}
+                            <label class="form-check-label" for="{{ form.is_important.id_for_label }}">Mark as High
+                                Priority ⭐</label>
+                        </div>
+
+                        <!-- Done Toggle -->
+                        <div class="form-check form-switch">
+                            {{ form.done }}
+                            <label class="form-check-label" for="{{ form.done.id_for_label }}">Mark as Completed
+                                ✅</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reminder -->
+                <div class="form-group mb-5">
+                    <label for="{{ form.reminder.id_for_label }}" class="text-uppercase text-secondary fw-bold"
+                        style="font-size: 13px; letter-spacing: 0.5px;">🔔 Reminder (Optional)</label>
+                    <div class="mt-1">
+                        {{ form.reminder }}
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'todos_list' %}" class="btn btn-light"
+                        style="font-weight: 600; color: #64748b;">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-5" style="border-radius: 10px; font-weight: 700;">
+                        💾 Save Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Modern inputs */
+    input[type="text"],
+    input[type="date"],
+    input[type="datetime-local"],
+    select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 15px;
+        transition: all 0.2s;
+        background: #fff;
+    }
+
+    input[type="text"]:focus,
+    select:focus,
+    input[type="date"]:focus,
+    input[type="datetime-local"]:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    /* Bigger emoji animation */
+    #emoji-display {
+        transition: transform 0.2s;
+    }
+
+    #emoji-display.pop {
+        transform: scale(1.2);
+    }
+
+    /* Custom switch styling overrides Bootstrap defaults a bit */
+    .form-switch .form-check-input {
+        width: 3em;
+        height: 1.5em;
+        cursor: pointer;
+    }
+
+    .form-switch .form-check-input:checked {
+        background-color: #10b981;
+        border-color: #10b981;
+    }
+</style>
+
+<script>
+    (function () {
+        const emojiMap = {
+            'shopping': '🛒',
+            'meeting': '👥',
+            'outdoor': '🌳',
+            'workout': '💪',
+            'custom': '✨'
+        };
+
+        const select = document.getElementById('id_activity');
+        const display = document.getElementById('emoji-display');
+        const customRow = document.getElementById('custom-activity-row');
+
+        function updateUI() {
+            if (!select) return;
+            const val = select.value;
+            const emoji = emojiMap[val] || '⚡';
+
+            // Animate
+            display.classList.remove('pop');
+            void display.offsetWidth; // trigger reflow
+            display.textContent = emoji;
+            display.classList.add('pop');
+
+            // Toggle custom field
+            if (val === 'custom') {
+                customRow.style.display = 'block';
+            } else {
+                customRow.style.display = 'none';
+            }
+        }
+
+        if (select) {
+            select.addEventListener('change', updateUI);
+            // Init
+            updateUI();
+        }
+    })();
+</script>
+
+{% endblock %}

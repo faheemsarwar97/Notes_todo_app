@@ -1,0 +1,130 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- SortableJS CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+
+<div class="mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0;">📋 Kanban Board</h2>
+        <a href="{% url 'todos_add' %}" class="btn btn-success">➕ Add Task</a>
+    </div>
+</div>
+
+<div class="row kanban-board g-4">
+    <!-- To Do Column -->
+    <div class="col-md-4">
+        <div class="kanban-column" style="background: #f1f5f9; border-radius: 12px; height: 100%;">
+            <div class="column-header"
+                style="background: #e2e8f0; padding: 12px 16px; border-top-left-radius: 12px; border-top-right-radius: 12px; font-weight: 700; color: #475569; display: flex; justify-content: space-between;">
+                <span>⬜ To Do</span>
+                <span class="badge bg-white text-dark">{{ board.pending.count }}</span>
+            </div>
+            <div id="pending" class="column-body p-3" style="min-height: 400px; padding-bottom: 50px;"
+                data-status="PENDING">
+                {% for todo in board.pending %}
+                {% include "todo_card.html" %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- In Progress Column -->
+    <div class="col-md-4">
+        <div class="kanban-column" style="background: #eff6ff; border-radius: 12px; height: 100%;">
+            <div class="column-header"
+                style="background: #dbeafe; padding: 12px 16px; border-top-left-radius: 12px; border-top-right-radius: 12px; font-weight: 700; color: #1e40af; display: flex; justify-content: space-between;">
+                <span>🚧 In Progress</span>
+                <span class="badge bg-white text-primary">{{ board.in_progress.count }}</span>
+            </div>
+            <div id="in_progress" class="column-body p-3" style="min-height: 400px; padding-bottom: 50px;"
+                data-status="IN_PROGRESS">
+                {% for todo in board.in_progress %}
+                {% include "todo_card.html" %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Done Column -->
+    <div class="col-md-4">
+        <div class="kanban-column" style="background: #f0fdf4; border-radius: 12px; height: 100%;">
+            <div class="column-header"
+                style="background: #dcfce7; padding: 12px 16px; border-top-left-radius: 12px; border-top-right-radius: 12px; font-weight: 700; color: #166534; display: flex; justify-content: space-between;">
+                <span>✅ Done</span>
+                <span class="badge bg-white text-success">{{ board.completed.count }}</span>
+            </div>
+            <div id="completed" class="column-body p-3" style="min-height: 400px; padding-bottom: 50px;"
+                data-status="COMPLETED">
+                {% for todo in board.completed %}
+                {% include "todo_card.html" with is_completed=True %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts for Drag & Drop -->
+<script>
+    const columns = document.querySelectorAll('.column-body');
+    // const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value; // Removed to fix crash
+
+    columns.forEach(column => {
+        new Sortable(column, {
+            group: 'kanban', // set both lists to same group
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function (evt) {
+                const itemEl = evt.item;
+                const newStatus = evt.to.getAttribute('data-status');
+                const todoId = itemEl.getAttribute('data-id');
+
+                // If moved to same column, do nothing (unless we implement re-ordering later)
+                if (evt.from === evt.to) return;
+
+                // API Call
+                fetch(`/todos/update-status/${todoId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            alert('Error moving task!');
+                            // Revert change (simple reload for MVP or sortable revert)
+                            window.location.reload();
+                        }
+                        else {
+                            // Optional: Visual change on checkmark if moved to Done
+                            if (newStatus === 'COMPLETED') {
+                                itemEl.style.opacity = '0.7';
+                            } else {
+                                itemEl.style.opacity = '1';
+                            }
+                        }
+                    });
+            }
+        });
+    });
+</script>
+
+<style>
+    .sortable-ghost {
+        opacity: 0.4;
+        background: #fde68a;
+    }
+
+    .sortable-drag {
+        cursor: grabbing;
+    }
+
+    .column-body {
+        transition: background-color 0.2s;
+    }
+</style>
+
+{% endblock %}

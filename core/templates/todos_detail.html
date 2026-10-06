@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-body p-5">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="display-6 fw-bold text-dark mb-0">Todo Details</h2>
+                    {% if t.done %}
+                    <span class="badge bg-success fs-6">✓ Completed</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark fs-6">⏳ Pending</span>
+                    {% endif %}
+                </div>
+
+                <hr class="mb-5">
+
+                <!-- Main Task Info -->
+                <div class="mb-5">
+                    <label class="text-uppercase text-secondary fw-bold small mb-2">Task</label>
+                    <h3 class="fw-normal text-dark">{{ t.task }}</h3>
+                </div>
+
+                <div class="row g-4 mb-5">
+                    <!-- Activity -->
+                    <div class="col-md-6">
+                        <label class="text-uppercase text-secondary fw-bold small mb-2">Activity</label>
+                        <div class="d-flex align-items-center">
+                            <span class="fs-4 me-2">
+                                {% if t.activity == 'shopping' %}🛒
+                                {% elif t.activity == 'meeting' %}👥
+                                {% elif t.activity == 'outdoor' %}🌳
+                                {% elif t.activity == 'workout' %}💪
+                                {% else %}✨{% endif %}
+                            </span>
+                            <span class="fs-5">{{ t.get_activity_display }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Priority -->
+                    <div class="col-md-6">
+                        <label class="text-uppercase text-secondary fw-bold small mb-2">Priority</label>
+                        <div>
+                            {% if t.is_important %}
+                            <span class="text-danger fw-bold">🔥 Important</span>
+                            {% else %}
+                            <span class="text-muted">Normal</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Due Date -->
+                    <div class="col-md-6">
+                        <label class="text-uppercase text-secondary fw-bold small mb-2">Due Date</label>
+                        <div>
+                            {% if t.due_date %}
+                            {{ t.due_date|date:"F d, Y" }}
+                            {% else %}
+                            <span class="text-muted">No due date</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Reminder -->
+                    <div class="col-md-6">
+                        <label class="text-uppercase text-secondary fw-bold small mb-2">Reminder</label>
+                        <div>
+                            {% if t.reminder %}
+                            {{ t.reminder|date:"M d, Y H:i" }}
+                            {% else %}
+                            <span class="text-muted">No reminder set</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="d-flex gap-3 mt-5 pt-3 border-top">
+                    <a href="{% url 'todos_list' %}" class="btn btn-outline-secondary">← Back to List</a>
+                    <a href="{% url 'todos_edit' t.id %}" class="btn btn-primary">Edit Todo</a>
+                    <a href="{% url 'todos_delete' t.id %}" class="btn btn-danger"
+                        onclick="return confirm('Delete this todo?')">Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

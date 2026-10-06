@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-body p-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="display-6 fw-bold text-dark mb-0">{{ note.title }}</h1>
+                    <small class="text-muted">Created: {{ note.created_at|date:"M d, Y" }}</small>
+                </div>
+
+                <hr class="mb-4">
+
+                <div class="note-content mb-5 ql-editor"
+                    style="white-space: normal; font-size: 1.1rem; line-height: 1.8; color: #334155; padding: 0;">
+                    {{ note.content|safe }}
+                </div>
+
+                <div class="d-flex gap-3 mt-5 pt-3 border-top">
+                    <a href="{% url 'notes_list' %}" class="btn btn-outline-secondary">← Back to List</a>
+                    <a href="{% url 'notes_edit' note.id %}" class="btn btn-primary">Edit Note</a>
+                    <a href="{% url 'notes_delete' note.id %}" class="btn btn-danger"
+                        onclick="return confirm('Delete this note?')">Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

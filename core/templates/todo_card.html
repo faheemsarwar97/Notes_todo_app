@@ -1,0 +1,32 @@
+<div class="card mb-3 shadow-sm border-0 kanban-card" data-id="{{ todo.id }}" style="cursor: grab;">
+    <div class="card-body p-3">
+        <!-- Labels -->
+        <div class="mb-2">
+            {% if todo.is_important %}
+            <span class="badge bg-danger">Important</span>
+            {% endif %}
+            <span class="badge bg-light text-secondary border">{{ todo.get_activity_display }}</span>
+        </div>
+
+        <!-- Task -->
+        <h6 class="card-title text-dark fw-bold mb-2">
+            {{ todo.task }}
+        </h6>
+
+        <!-- Footer -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <small class="text-muted" style="font-size: 11px;">
+                {% if todo.due_date %}
+                🗓️ {{ todo.due_date|date:"M d" }}
+                {% else %}
+                📅 No date
+                {% endif %}
+            </small>
+
+            <a href="{% url 'todos_edit' todo.id %}" class="btn btn-sm btn-light text-secondary"
+                style="padding: 2px 8px; font-size: 11px;">
+                Edit
+            </a>
+        </div>
+    </div>
+</div>

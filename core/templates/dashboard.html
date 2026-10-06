@@ -1,0 +1,567 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- Dashboard styling override for full width premium feel -->
+<div class="dashboard-container">
+
+    <!-- 1. Header Section with Dynamic Greeting -->
+    <header class="d-flex justify-content-between align-items-end mb-5 anime-slide-down">
+        <div>
+            <div class="subtitle text-uppercase tracking-wider mb-2">My Workspace</div>
+            <h1 class="display-4 fw-bold text-gradient">
+                Good <span id="time-greeting">Day</span>, {{ user.username }}! 👋
+            </h1>
+            <p class="text-muted lead mb-0">Here's what's happening today.</p>
+        </div>
+        <div class="d-flex gap-3">
+            <form method="get" class="search-bar-container">
+                <input type="text" name="q" placeholder="Type to search..." value="{{ query }}">
+                <button type="submit">🔍</button>
+            </form>
+            <a href="{% url 'todos_add' %}" class="btn btn-primary btn-lg rounded-pill px-4 shadow-lg hover-lift">
+                <span>⚡ Quick Task</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- 2. Stats Row (Glassmorphism Cards) -->
+    <div class="row g-4 mb-5 anime-fade-in-up">
+        <div class="col-md-4">
+            <div class="stat-card glass-card accent-blue">
+                <div class="icon-wrapper">📝</div>
+                <div class="stat-content">
+                    <h3>{{ notes_count }}</h3>
+                    <p>Total Notes</p>
+                </div>
+                <a href="{% url 'notes_list' %}" class="stretched-link"></a>
+                <div class="stat-bg-icon">📝</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card glass-card accent-amber">
+                <div class="icon-wrapper">⏳</div>
+                <div class="stat-content">
+                    <h3>{{ todos_count }}</h3>
+                    <p>Pending Tasks</p>
+                </div>
+                <a href="{% url 'todos_list' %}" class="stretched-link"></a>
+                <div class="stat-bg-icon">⚡</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card glass-card accent-green">
+                <div class="icon-wrapper">🏆</div>
+                <div class="stat-content">
+                    <h3>{{ completed_todos }}</h3>
+                    <p>Completed</p>
+                </div>
+                <a href="{% url 'todos_list' %}" class="stretched-link"></a>
+                <div class="stat-bg-icon">✅</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEARCH RESULTS SECTION -->
+    {% if query %}
+    <div class="row mb-5 anime-fade-in-up">
+        <div class="col-12">
+            <h5 class="fw-bold mb-4">🔍 Search Results for "{{ query }}"</h5>
+
+            {% if notes_results or todos_results %}
+            <div class="row g-4">
+                {% if notes_results %}
+                <div class="col-md-6">
+                    <div class="glass-panel p-4 h-100">
+                        <h6 class="text-uppercase text-primary fw-bold mb-3"
+                            style="font-size: 0.8rem; letter-spacing: 1px;">📝 Notes Found ({{ notes_results.count }})
+                        </h6>
+                        <div class="d-flex flex-column gap-3">
+                            {% for note in notes_results %}
+                            <a href="{% url 'notes_edit' note.id %}"
+                                class="d-block text-decoration-none text-dark p-3 rounded hover-lift"
+                                style="background: rgba(241, 245, 249, 0.5);">
+                                <div class="fw-bold">{{ note.title }}</div>
+                                <div class="small text-muted mt-1">{{ note.content|striptags|truncatechars:100 }}</div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if todos_results %}
+                <div class="col-md-6">
+                    <div class="glass-panel p-4 h-100">
+                        <h6 class="text-uppercase text-success fw-bold mb-3"
+                            style="font-size: 0.8rem; letter-spacing: 1px;">✅ Todos Found ({{ todos_results.count }})
+                        </h6>
+                        <div class="d-flex flex-column gap-3">
+                            {% for todo in todos_results %}
+                            <a href="{% url 'todos_edit' todo.id %}"
+                                class="d-block text-decoration-none text-dark p-3 rounded hover-lift"
+                                style="background: rgba(241, 245, 249, 0.5);">
+                                <div class="d-flex justify-content-between">
+                                    <div class="fw-bold">{{ todo.task }}</div>
+                                    {% if todo.done %}
+                                    <span class="badge bg-success-subtle text-success">Done</span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning">Pending</span>
+                                    {% endif %}
+                                </div>
+                                <div class="small text-muted mt-1">Due: {{ todo.due_date|default:"No Date" }}</div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="glass-panel p-5 text-center">
+                <div class="h1 mb-3">😕</div>
+                <h5 class="text-muted">No results found for "{{ query }}"</h5>
+                <p class="text-muted small">Try searching for something else.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-5">
+        <!-- LEFT COLUMN: FOCUS & MATRIX -->
+        <div class="col-lg-8 mb-5">
+
+            <!-- Urgent Focus (Today) -->
+            <section class="mb-5 anime-fade-in-up" style="animation-delay: 0.1s;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold m-0">🔥 Today's Focus</h4>
+                    <span class="badge bg-light text-secondary rounded-pill px-3 py-2">
+                        {{ today_todos.count }} Tasks Due
+                    </span>
+                </div>
+
+                {% if today_todos %}
+                <div class="focus-list">
+                    {% for todo in today_todos|slice:":4" %}
+                    <div class="focus-item glass-panel">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="priority-indicator {% if todo.is_important %}high{% endif %}"></div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold">{{ todo.task }}</h6>
+                                <div class="d-flex gap-3 text-muted" style="font-size: 0.85rem;">
+                                    {% if todo.reminder %}
+                                    <span>⏰ {{ todo.reminder|date:"g:i A" }}</span>
+                                    {% else %}
+                                    <span>📅 Today</span>
+                                    {% endif %}
+                                    <span class="badge bg-soft-blue text-primary">{{ todo.get_activity_display }}</span>
+                                </div>
+                            </div>
+                            <form method="POST" action="{% url 'todos_check_done' todo.id %}">
+                                {% csrf_token %}
+                                <button class="btn-check-circle" title="Mark Done"></button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state glass-panel text-center py-5">
+                    <div class="mb-3" style="font-size: 3rem;">🎉</div>
+                    <h5>All caught up!</h5>
+                    <p class="text-muted">You have no tasks due today. Enjoy your freedom.</p>
+                    <a href="{% url 'todos_add' %}" class="btn btn-sm btn-outline-primary rounded-pill mt-2">Plan
+                        Ahead</a>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- Priority Matrix Grid -->
+            <section class="anime-fade-in-up" style="animation-delay: 0.2s;">
+                <h4 class="fw-bold mb-4">⚡ Priority Matrix</h4>
+                <div class="row g-4">
+                    <!-- Q1: Urgent & Important -->
+                    <div class="col-md-6">
+                        <div class="matrix-card glass-panel danger-glow">
+                            <div class="matrix-header text-danger">
+                                <span>🚨 Do First</span>
+                                <small>Urgent & Important</small>
+                            </div>
+                            <div class="matrix-body">
+                                {% for t in important_urgent %}
+                                <a href="{% url 'todos_edit' t.id %}" class="matrix-item">
+                                    {{ t.task|truncatechars:30 }}
+                                </a>
+                                {% empty %}
+                                <div class="text-muted small fst-italic">Nothing critical right now.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Q2: Schedule -->
+                    <div class="col-md-6">
+                        <div class="matrix-card glass-panel info-glow">
+                            <div class="matrix-header text-primary">
+                                <span>📅 Schedule</span>
+                                <small>Important, Not Urgent</small>
+                            </div>
+                            <div class="matrix-body">
+                                {% for t in important_not_urgent %}
+                                <a href="{% url 'todos_edit' t.id %}" class="matrix-item">
+                                    {{ t.task|truncatechars:30 }}
+                                </a>
+                                {% empty %}
+                                <div class="text-muted small fst-italic">Plan some goals.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- RIGHT COLUMN: ALERTS & CALENDAR -->
+        <div class="col-lg-4">
+            <!-- Interactive Calendar Widget -->
+            <div class="glass-panel text-center mb-4 p-4 anime-fade-in-up"
+                style="animation-delay: 0.3s; background: linear-gradient(145deg, #ffffff, #f3f4f6);">
+                <h6 class="text-uppercase text-muted fw-bold mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">
+                    Current Month</h6>
+                <div class="display-1 fw-bold text-dark mb-0">{{ "now"|date:"d" }}</div>
+                <div class="h4 text-primary mb-3">{{ "now"|date:"F" }}</div>
+
+                <div class="d-flex justify-content-center gap-3 mb-3">
+                    <div class="badge bg-soft-blue text-primary p-2">
+                        📅 {{ monthly_stats.pending }} Pending
+                    </div>
+                    <div class="badge bg-success-subtle text-success p-2">
+                        ✅ {{ monthly_stats.completed }} Done
+                    </div>
+                </div>
+
+                <a href="{% url 'todos_calendar' %}" class="btn btn-light w-100 rounded-pill fw-bold">Open Full
+                    Calendar</a>
+            </div>
+
+            <!-- Notifications / Reminders -->
+            <div class="glass-panel p-0 mb-4 anime-fade-in-up" style="animation-delay: 0.4s; overflow: hidden;">
+                <div class="p-3 border-bottom bg-light bg-opacity-50">
+                    <h6 class="m-0 fw-bold">🔔 Notifications</h6>
+                </div>
+                <div class="p-3">
+                    {% if overdue_reminders %}
+                    {% for r in overdue_reminders|slice:":3" %}
+                    <div class="notification-item overdue mb-3">
+                        <div class="icon">⚠️</div>
+                        <div>
+                            <div class="fw-bold text-danger">Overdue: {{ r.task }}</div>
+                            <small class="text-muted">{{ r.reminder|timesince }} ago</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    {% if upcoming_reminders %}
+                    {% for r in upcoming_reminders|slice:":3" %}
+                    <div class="notification-item upcoming mb-3">
+                        <div class="icon">⏰</div>
+                        <div>
+                            <div class="fw-bold text-dark">{{ r.task }}</div>
+                            <small class="text-muted">in {{ r.reminder|timeuntil }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    {% if not overdue_reminders and not upcoming_reminders %}
+                    <div class="text-center text-muted py-3">
+                        <small>No new notifications</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // update greeting based on time
+    const hour = new Date().getHours();
+    const greetEl = document.getElementById('time-greeting');
+    if (hour < 12) greetEl.innerText = 'Morning';
+    else if (hour < 18) greetEl.innerText = 'Afternoon';
+    else greetEl.innerText = 'Evening';
+</script>
+
+<style>
+    /* PREMIUM CSS RESET & UTILS */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    body {
+        background-color: #f3f4f6;
+        background-image:
+            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+        background-attachment: fixed;
+    }
+
+    .text-gradient {
+        background: -webkit-linear-gradient(45deg, #1e293b, #4f46e5);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+        font-size: 0.75rem;
+        letter-spacing: 2px;
+        font-weight: 700;
+        color: #94a3b8;
+    }
+
+    .bg-soft-blue {
+        background-color: #e0e7ff;
+    }
+
+    /* SEARCH & BUTTONS */
+    .search-bar-container {
+        background: white;
+        padding: 8px 16px;
+        border-radius: 50px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .search-bar-container:focus-within {
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
+        border-color: #6366f1;
+    }
+
+    .search-bar-container input {
+        border: none;
+        outline: none;
+        font-size: 14px;
+        width: 200px;
+    }
+
+    .search-bar-container button {
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .hover-lift {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3) !important;
+    }
+
+
+    /* GLASS CARDS */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        border-radius: 20px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(31, 38, 135, 0.12);
+    }
+
+    .stat-content h3 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0;
+        color: #1e293b;
+    }
+
+    .stat-content p {
+        margin: 0;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+
+    .icon-wrapper {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-bg-icon {
+        position: absolute;
+        right: -20px;
+        bottom: -20px;
+        font-size: 8rem;
+        opacity: 0.05;
+        transform: rotate(-15deg);
+    }
+
+    .accent-blue {
+        border-bottom: 4px solid #6366f1;
+    }
+
+    .accent-amber {
+        border-bottom: 4px solid #f59e0b;
+    }
+
+    .accent-green {
+        border-bottom: 4px solid #10b981;
+    }
+
+
+    /* GLASS PANELS */
+    .glass-panel {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid rgba(0, 0, 0, 0.03);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s ease;
+    }
+
+    /* FOCUS LIST */
+    .focus-item {
+        padding: 16px;
+        margin-bottom: 12px;
+        border-left: 4px solid transparent;
+    }
+
+    .focus-item:hover {
+        transform: scale(1.01);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+    }
+
+    .priority-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #cbd5e1;
+    }
+
+    .priority-indicator.high {
+        background: #f59e0b;
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+
+    .btn-check-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid #e2e8f0;
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-check-circle:hover {
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.1);
+    }
+
+
+    /* MATRIX CARDS */
+    .matrix-card {
+        padding: 20px;
+        height: 100%;
+    }
+
+    .danger-glow {
+        box-shadow: 0 10px 30px rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.1);
+    }
+
+    .matrix-item {
+        display: block;
+        padding: 8px 12px;
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 6px;
+        color: #334155;
+        text-decoration: none;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+        transition: 0.2s;
+    }
+
+    .matrix-item:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: #0f172a;
+        padding-left: 16px;
+    }
+
+    /* NOTIFICATIONS */
+    .notification-item {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 8px;
+        border-radius: 8px;
+    }
+
+    .notification-item.overdue {
+        background: #fef2f2;
+    }
+
+    .notification-item.upcoming {
+        background: #f0f9ff;
+    }
+
+    .notification-item .icon {
+        font-size: 1.2rem;
+    }
+
+
+    /* ANIMATIONS */
+    .anime-slide-down {
+        animation: slideDown 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .anime-fade-in-up {
+        opacity: 0;
+        animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+{% endblock %}
